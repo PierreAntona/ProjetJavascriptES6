@@ -9,37 +9,18 @@
       href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css"
     />
   </head>
-  <body>
-    <nav class="container-fluid">
-        <ul>
-          <li><strong>Projet NFTs</strong></li>
-        </ul>
-        <ul>
-          <li><a href="#">Order by creator</a></li>
-          <li><a href="#">Order by best selling</a></li>
-          <li><a href="#" role="button" class="outline">Favorites</a></li>
-        </ul>
-      </nav>
-    <main class="container">
-      <!-- Modal -->
-      <dialog id="modal-example">
-        <article>
-          <a
-            href="#close"
-            aria-label="Close"
-            class="close"
-            data-target="modal-example"
-            onClick="toggleModal(event)"
-          >
-          </a>
-          <h3>Confirm your action!</h3>
-          <p>
-            Cras sit amet maximus risus. Pellentesque sodales odio sit amet
-            augue finibus pellentesque. Nullam finibus risus non semper euismod.
-          </p>
-        </article>
-      </dialog>
-    </main>
+  <body class="container">
+    <nav>
+      <ul>
+        <li><strong>Projet NFTs</strong></li>
+      </ul>
+      <ul>
+        <li><a href="#">Order by creator</a></li>
+        <li><a href="#">Order by best selling</a></li>
+        <li><a href="#" role="button" class="outline">Favorites</a></li>
+      </ul>
+    </nav>
+    <div id="container"></div>
   </body>
   <style>
     @media only screen and (prefers-color-scheme: dark) {
@@ -50,27 +31,66 @@
         --primary-inverse: #fff;
       }
     }
-    main {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: space-around;
+    #container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
     }
     img {
       max-width: 10em;
     }
-    article {
+    .nft {
       width: 30%;
       display: flex;
       flex-direction: column;
+      justify-content: space-between;
       align-items: center;
-      text-align: justify;
+      text-align: center;
     }
   </style>
   <script type="text/javascript">
-    const root = document.querySelector("main");
+    const root = document.querySelector("#container");
+
+    function createModal(id, config, parent) {
+      const { name, desc } = config || {};
+
+      const dialog = document.createElement("dialog");
+      const article = document.createElement("article");
+      const header = document.createElement("header");
+      const close = document.createElement("a");
+      const title = document.createElement("h5");
+    
+      close.setAttribute('href', '#close');
+      close.setAttribute('aria-label', 'Close');
+      close.setAttribute('class', 'close');
+      close.setAttribute('data-target', `modal_${id}`);
+      close.onclick = function() {
+          toggleModal(event);
+        }
+
+      dialog.appendChild(article);
+      dialog.setAttribute('id', `modal_${id}`)
+
+      article.appendChild(header);
+      header.appendChild(close);
+      
+      header.appendChild(document.createTextNode(name));
+
+      const description = document.createElement("p");
+      if (desc) {
+        description.appendChild(document.createTextNode(`Description : ${desc}`));
+      } else {
+        description.appendChild(document.createTextNode('No description'));
+      }
+      article.appendChild(description);
+
+      parent.appendChild(dialog);
+
+      return dialog;
+    }
 
     function createElement(tag, config, parent = null) {
-      const { source, text, cssText } = config || {};
+      const { source, text, cssText, id } = config || {};
       const element = document.createElement(tag);
 
       if (cssText) {
@@ -84,7 +104,7 @@
       if (text) {
         element.innerHTML = text;
         if (text == "Détails") {
-          element.setAttribute("data-target", "modal-example");
+          element.setAttribute("data-target", `modal_${id}`);
           element.onclick = function () {
             toggleModal(event);
           };
@@ -106,12 +126,12 @@
       const data = await response.json();
       const nft = await data.assets.map((item) => {
         if (item.image_url) {
-          console.log(item);
           const myDiv = createElement("article");
+          myDiv.classList.add('nft');
           createElement("img", { source: item.image_url }, myDiv);
           createElement("h5", { text: item.name }, myDiv);
-          //createElement("small", { text: item.description }, myDiv);
-          createElement("button", { text: "Détails" }, myDiv);
+          createElement("button", { text: "Détails", id: item.id }, myDiv);
+          createModal(item.id, {name: item.name, desc: item.description }, myDiv);
         }
       });
     }
