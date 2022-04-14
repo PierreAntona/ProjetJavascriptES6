@@ -100,13 +100,8 @@
       return element;
     }
 
-    async function postData(url = "https://api.m3o.com/v1/nft/Assets") {
-      const response = await fetch(url, {
-        headers: {
-          Authorization:
-            "Bearer MjU3ZGEzZjItYWQ1OC00YjgyLWE2MWMtNDVmYmUwMDUxZGI0",
-        },
-      });
+    async function postData(url = "https://awesome-nft-app.herokuapp.com/") {
+      const response = await fetch(url);
 
       const data = await response.json();
       const nft = await data.assets.map((item) => {
