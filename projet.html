@@ -20,7 +20,13 @@
           <li><a href="#" role="button" class="outline">Favorites</a></li>
         </ul>
       </nav>
+      <details role="list">
+        <summary aria-haspopup="listbox">Dropdown</summary>
+        <ul id ='trieur_Creat' role="listbox">
+        </ul>
+      </details>
     <main class="container">
+
       <!-- Modal -->
       <dialog id="modal-example">
         <article>
@@ -106,11 +112,13 @@
       const data = await response.json();
       const nft = await data.assets.map((item) => {
         if (item.image_url) {
-          console.log(item);
           const myDiv = createElement("article");
           createElement("img", { source: item.image_url }, myDiv);
           createElement("h5", { text: item.name }, myDiv);
           //createElement("small", { text: item.description }, myDiv);
+
+          createDrop(item.creator.username);
+
           createElement("button", { text: "Détails" }, myDiv);
         }
       });
@@ -219,5 +227,18 @@
     const isScrollbarVisible = () => {
       return document.body.scrollHeight > screen.height;
     };
+
+function createDrop(username) {
+    const myElement = document.createElement("li");
+    const element = document.getElementById('trieur_Creat');
+    const creatorName = document.createTextNode(username);
+    if(creatorName === ''){
+      
+    }else{
+      myElement.appendChild(creatorName);
+      element.appendChild(myElement);
+    }
+  }
+
   </script>
 </html>
