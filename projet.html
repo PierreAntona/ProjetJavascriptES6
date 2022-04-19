@@ -14,6 +14,14 @@
       <ul>
         <li><strong>Projet NFTs</strong></li>
       </ul>
+      <input
+        type="search"
+        id="search"
+        name="search"
+        placeholder="Search"
+        style="width: 80%; margin-top: 20px"
+        onkeydown="search(this)"
+      />
       <ul>
         <li><a href="#">Order by creator</a></li>
         <li><a href="#">Order by best selling</a></li>
@@ -59,28 +67,30 @@
       const header = document.createElement("header");
       const close = document.createElement("a");
       const title = document.createElement("h5");
-    
-      close.setAttribute('href', '#close');
-      close.setAttribute('aria-label', 'Close');
-      close.setAttribute('class', 'close');
-      close.setAttribute('data-target', `modal_${id}`);
-      close.onclick = function() {
-          toggleModal(event);
-        }
+
+      close.setAttribute("href", "#close");
+      close.setAttribute("aria-label", "Close");
+      close.setAttribute("class", "close");
+      close.setAttribute("data-target", `modal_${id}`);
+      close.onclick = function () {
+        toggleModal(event);
+      };
 
       dialog.appendChild(article);
-      dialog.setAttribute('id', `modal_${id}`)
+      dialog.setAttribute("id", `modal_${id}`);
 
       article.appendChild(header);
       header.appendChild(close);
-      
+
       header.appendChild(document.createTextNode(name));
 
       const description = document.createElement("p");
       if (desc) {
-        description.appendChild(document.createTextNode(`Description : ${desc}`));
+        description.appendChild(
+          document.createTextNode(`Description : ${desc}`)
+        );
       } else {
-        description.appendChild(document.createTextNode('No description'));
+        description.appendChild(document.createTextNode("No description"));
       }
       article.appendChild(description);
 
@@ -119,24 +129,69 @@
 
       return element;
     }
+    function search(ele) {
+      if (event.key === "Enter") {
+        const val = ele.value;
 
-    async function postData(url = "https://awesome-nft-app.herokuapp.com/") {
+        deleteAllNft();
+        postData(val);
+      }
+    }
+    async function postData(val) {
+      const url = `https://awesome-nft-app.herokuapp.com/search?q=${val}`;
+      // const url = `https://awesome-nft-app.herokuapp.com`;
+
+      console.log("url : ", url);
+
       const response = await fetch(url);
-
       const data = await response.json();
       const nft = await data.assets.map((item) => {
         if (item.image_url) {
           const myDiv = createElement("article");
-          myDiv.classList.add('nft');
+          myDiv.classList.add("nft");
           createElement("img", { source: item.image_url }, myDiv);
           createElement("h5", { text: item.name }, myDiv);
           createElement("button", { text: "Détails", id: item.id }, myDiv);
-          createModal(item.id, {name: item.name, desc: item.description }, myDiv);
+          createModal(
+            item.id,
+            { name: item.name, desc: item.description },
+            myDiv
+          );
         }
       });
     }
 
-    postData();
+    // postData();
+    init();
+
+    async function init() {
+      const url = `https://awesome-nft-app.herokuapp.com`;
+
+      const response = await fetch(url);
+      const data = await response.json();
+      const nft = await data.assets.map((item) => {
+        if (item.image_url) {
+          const myDiv = createElement("article");
+          myDiv.classList.add("nft");
+          createElement("img", { source: item.image_url }, myDiv);
+          createElement("h5", { text: item.name }, myDiv);
+          createElement("button", { text: "Détails", id: item.id }, myDiv);
+          createModal(
+            item.id,
+            { name: item.name, desc: item.description },
+            myDiv
+          );
+        }
+      });
+    }
+
+    function deleteAllNft() {
+      const allNft = document.querySelectorAll(".nft");
+      allNft.forEach((item) => {
+        console.log(item);
+        item.remove();
+      });
+    }
 
     /*
      * Modal
