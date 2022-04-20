@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Projet NFTs</title>
+    <title>NFTs Project</title>
     <link
       rel="stylesheet"
       href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css"
@@ -12,15 +12,73 @@
   <body class="container">
     <nav>
       <ul>
-        <li><strong>Projet NFTs</strong></li>
+        <li>
+          <strong><a onclick="reloadPage()">NFTs Project</a></strong>
+        </li>
       </ul>
       <ul>
-        <li><a href="#">Order by creator</a></li>
-        <li><a href="#">Order by best selling</a></li>
-        <li><a href="#" role="button" class="outline">Favorites</a></li>
+        <li>
+          <form onsubmit="makeSearch(search.value)" style="margin: 0">
+            <input
+              type="search"
+              id="search"
+              name="search"
+              placeholder="Search"
+            />
+          </form>
+        </li>
+        <li>
+          <details role="list" dir="rtl">
+            <summary aria-haspopup="listbox" role="link">Sales</summary>
+            <ul id="sells_list" role="listbox">
+              <li><a onclick="orderBySales(0, 10)">10 - 0</a></li>
+              <li><a onclick="orderBySales(10, 50)">50 - 10</a></li>
+              <li><a onclick="orderBySales(50, 100)">100 - 50</a></li>
+              <li><a onclick="orderBySales(100, 100000)">100 +</a></li>
+              <li>
+                <a data-target="modal-stats" onClick="toggleModal(event)"
+                  >Sales stats</a
+                >
+              </li>
+            </ul>
+          </details>
+        </li>
+        <li>
+          <details role="list" dir="rtl">
+            <summary aria-haspopup="listbox" role="link">Creators</summary>
+            <ul id="trieur_Creat" role="listbox"></ul>
+          </details>
+        </li>
+        <li>
+          <a
+            id="favs"
+            href="#"
+            role="button"
+            class="outline"
+            onclick="showFavs()"
+            >Favorites</a
+          >
+        </li>
       </ul>
     </nav>
-    <div id="container"></div>
+    <div id="container">
+    </div>
+    <dialog id="modal-stats">
+      <article>
+        <a
+          href="#close"
+          aria-label="Close"
+          class="close"
+          data-target="modal-stats"
+          onClick="toggleModal(event)"
+        >
+        </a>
+        <h4>Sales stats</h4>
+        <figure>
+          <svg id="graph"></svg>
+        </figure>
+      </article>
+    </dialog>
   </body>
   <style>
     @media only screen and (prefers-color-scheme: dark) {
@@ -34,10 +92,7 @@
     #container {
       display: flex;
       flex-wrap: wrap;
-      justify-content: space-between;
-    }
-    img {
-      max-width: 10em;
+      justify-content: space-around;
     }
     .nft {
       width: 30%;
@@ -47,67 +102,413 @@
       align-items: center;
       text-align: center;
     }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .fadeIn {
+      animation-name: fadeIn;
+      animation-duration: 1.5s;
+    }
   </style>
   <script type="text/javascript">
     const root = document.querySelector("#container");
 
-    function createModal(id, config, parent) {
-      const { name, desc } = config || {};
+    // NETTOYAGE DU LOCAL STORAGE
+    //localStorage.clear();
+
+    // RELOAD PAGE AU CLIC SUR LOGO
+    const reloadPage = () => {
+      document.getElementById("container").innerHTML = "";
+      document.getElementById("trieur_Creat").innerHTML = "";
+      document.getElementById("favs").classList.add("outline");
+      document.getElementById("search").value = "";
+      postData();
+    };
+
+    // CREATION DES MODALS AVEC DETAILS NFT
+    function createModal(id, config, parent = null) {
+      const { name, desc, creator, sales } = config || {};
 
       const dialog = document.createElement("dialog");
       const article = document.createElement("article");
       const header = document.createElement("header");
       const close = document.createElement("a");
       const title = document.createElement("h5");
-    
-      close.setAttribute('href', '#close');
-      close.setAttribute('aria-label', 'Close');
-      close.setAttribute('class', 'close');
-      close.setAttribute('data-target', `modal_${id}`);
-      close.onclick = function() {
-          toggleModal(event);
-        }
+
+      close.setAttribute("href", "#close");
+      close.setAttribute("aria-label", "Close");
+      close.setAttribute("class", "close");
+      close.setAttribute("data-target", `modal_${id}`);
+      close.onclick = function () {
+        toggleModal(event);
+      };
 
       dialog.appendChild(article);
-      dialog.setAttribute('id', `modal_${id}`)
+      dialog.setAttribute("id", `modal_${id}`);
 
       article.appendChild(header);
       header.appendChild(close);
-      
+
       header.appendChild(document.createTextNode(name));
 
       const description = document.createElement("p");
       if (desc) {
-        description.appendChild(document.createTextNode(`Description : ${desc}`));
+        description.appendChild(
+          document.createTextNode(`Description : ${desc}`)
+        );
       } else {
-        description.appendChild(document.createTextNode('No description'));
+        description.appendChild(document.createTextNode("No description"));
       }
+
+      const createur = document.createElement("p");
+      if (creator) {
+        createur.appendChild(document.createTextNode(`Creator : ${creator}`));
+      } else {
+        createur.appendChild(document.createTextNode("Unknow creator"));
+      }
+
+      const ventes = document.createElement("p");
+      ventes.appendChild(document.createTextNode(`Sales : ${sales}`));
+
       article.appendChild(description);
+      article.appendChild(createur);
+      article.appendChild(ventes);
 
       parent.appendChild(dialog);
 
       return dialog;
     }
 
+    // GESTIONS DES BOUTONS FAVORIS
+    const favorites = (id) => {
+      const fav = document.getElementById(`fav_${id}`);
+      if (fav.textContent == "♡") {
+        localStorage.setItem(id, id);
+        fav.innerHTML = "♥";
+      } else {
+        fav.innerHTML = "♡";
+        localStorage.removeItem(id);
+      }
+    };
+
+    // BOUTON AFFICHAGE DES FAVORIS
+    const showFavs = () => {
+      button = document.getElementById("favs");
+      if (button.classList.length > 0) {
+        button.classList.remove("outline");
+        document.getElementById("container").innerHTML = "";
+        document.getElementById("trieur_Creat").innerHTML = "";
+        postDataFavs();
+      } else {
+        button.classList.add("outline");
+        document.getElementById("container").innerHTML = "";
+        document.getElementById("trieur_Creat").innerHTML = "";
+        postData();
+      }
+    };
+
+    // CREATION DROPDOWN DES CREATEURS
+    const createDrop = (username) => {
+      const item = document.createElement("li");
+      const dropdown = document.getElementById("trieur_Creat");
+      const link = document.createElement("a");
+      const creatorName = document.createTextNode(username);
+      link.onclick = function () {
+        searchByCreator(username);
+      };
+      link.appendChild(creatorName);
+      item.appendChild(link);
+      dropdown.appendChild(item);
+    };
+
+    // EFFECTUER UNE RECHERCHE
+    async function makeSearch(val) {
+      document.getElementById("container").innerHTML = "";
+      document.getElementById("trieur_Creat").innerHTML = "";
+      document.getElementById("favs").classList.add("outline");
+
+      const title = createElement("h2", {
+        text: `Search : ${val}`,
+        cssText: "width: 100%;",
+      });
+
+      const response = await fetch(
+        `https://awesome-nft-app.herokuapp.com/search?q=${val}`
+      );
+
+      const data = await response.json();
+      const nft = await data.assets.map((item) => {
+        const myDiv = createElement("article");
+        myDiv.classList.add("nft");
+        createElement("img", { source: item.image_url }, myDiv);
+        createElement("h5", { text: item.name }, myDiv);
+        const buttons = createElement(
+          "div",
+          {
+            cssText:
+              "width: 100%; display:flex; justify-content:space-between;",
+          },
+          myDiv
+        );
+        createElement("button", { text: "Details", id: item.id }, buttons);
+        createElement(
+          "button",
+          {
+            onclick: `favorites(${item.id});`,
+            text: "isFav",
+            cssText:
+              "margin-left: 15px; width: 60px; font-size: 30px; line-height:30px;",
+            className: "outline",
+            htmlId: item.id,
+          },
+          buttons
+        );
+        createModal(
+          item.id,
+          {
+            name: item.name,
+            desc: item.description,
+            creator: item.creator.username,
+            sales: item.sales,
+          },
+          myDiv
+        );
+      });
+    }
+
+    // RECHERCHER UN CREATEUR VIA DROPDOWN
+    async function searchByCreator(username) {
+      document.getElementById("container").innerHTML = "";
+      document.getElementById("favs").classList.add("outline");
+      const title = createElement("h2", {
+        text: `NFTs from ${username} :`,
+        cssText: "width: 100%;",
+      });
+      const response = await fetch(
+        `https://awesome-nft-app.herokuapp.com/creators/${username}`
+      );
+      const data = await response.json();
+      const nft = await data.assets.map((item) => {
+        const myDiv = createElement("article");
+        myDiv.classList.add("nft");
+        createElement("img", { source: item.image_url }, myDiv);
+        createElement("h5", { text: item.name }, myDiv);
+        const buttons = createElement(
+          "div",
+          {
+            cssText:
+              "width: 100%; display:flex; justify-content:space-between;",
+          },
+          myDiv
+        );
+        createElement("button", { text: "Details", id: item.id }, buttons);
+        createElement(
+          "button",
+          {
+            onclick: `favorites(${item.id});`,
+            text: "isFav",
+            cssText:
+              "margin-left: 15px; width: 60px; font-size: 30px; line-height:30px;",
+            className: "outline",
+            htmlId: item.id,
+          },
+          buttons
+        );
+        createModal(
+          item.id,
+          {
+            name: item.name,
+            desc: item.description,
+            creator: item.creator.username,
+            sales: item.sales,
+          },
+          myDiv
+        );
+      });
+    }
+
+    // TRIER PAR VENTE
+    async function orderBySales(a, b) {
+      document.getElementById("container").innerHTML = "";
+      document.getElementById("trieur_Creat").innerHTML = "";
+      document.getElementById("favs").classList.add("outline");
+      document.getElementById("search").value = "";
+      const title = createElement("h2", {
+        text: `Sales between ${a} and ${b} :`,
+        cssText: "width: 100%;",
+      });
+      const response = await fetch("https://awesome-nft-app.herokuapp.com/");
+      const data = await response.json();
+      const nft = await data.assets.map((item) => {
+        if (item.sales >= a && item.sales <= b) {
+          const myDiv = createElement("article");
+          myDiv.classList.add("nft");
+          createElement("img", { source: item.image_url }, myDiv);
+          createElement("h5", { text: item.name }, myDiv);
+          const buttons = createElement(
+            "div",
+            {
+              cssText:
+                "width: 100%; display:flex; justify-content:space-between;",
+            },
+            myDiv
+          );
+          createElement("button", { text: "Details", id: item.id }, buttons);
+          createElement(
+            "button",
+            {
+              onclick: `favorites(${item.id});`,
+              text: "isFav",
+              cssText:
+                "margin-left: 15px; width: 60px; font-size: 30px; line-height:30px;",
+              className: "outline",
+              htmlId: item.id,
+            },
+            buttons
+          );
+          createModal(
+            item.id,
+            {
+              name: item.name,
+              desc: item.description,
+              creator: item.creator.username,
+              sales: item.sales,
+            },
+            myDiv
+          );
+          if (item.creator.username) {
+            createDrop(item.creator.username);
+          }
+        }
+      });
+    }
+
+    // LAZY LOADING
+    function lazyLoad(target) {
+      const obs = new IntersectionObserver((entries, observer) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const img = entry.target;
+            const src = img.getAttribute("data-lazy");
+            img.setAttribute("src", src);
+            img.classList.add("fadeIn");
+            observer.disconnect();
+          }
+        });
+      });
+      obs.observe(target);
+    }
+
+    // STATS MODAL
+    async function statsModal() {
+      const dataset = [];
+      const response = await fetch(
+        "https://awesome-nft-app.herokuapp.com/?page=1"
+      );
+      const data = await response.json();
+      const nft = await data.assets.map((item) => {
+        dataset.push([item.sales, item.image_url]);
+      });
+      const svgWidth = 2000,
+        svgHeight = 600,
+        barPadding = 5;
+      const barWidth = svgWidth / dataset.length;
+
+      const container = document.getElementById("graph");
+      container.innerHTML = "";
+      container.setAttribute("width", svgWidth);
+      container.setAttribute("height", svgHeight);
+
+      for (let i = 0; i < dataset.length; i++) {
+        if (dataset[i]) {
+          const rect = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "rect"
+          );
+          rect.setAttribute("y", svgHeight - dataset[i][0] - 110);
+          rect.setAttribute("height", dataset[i][0]);
+          rect.setAttribute("width", barWidth - barPadding);
+
+          const sales = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "text"
+          );
+          sales.setAttributeNS(null, "x", 0);
+          sales.setAttributeNS(null, "y", svgHeight - 10);
+          sales.setAttributeNS(null, "font-weight", "bold");
+          sales.setAttributeNS(null, "font-size", "30");
+
+          const img = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "image"
+          );
+          img.setAttributeNS(null, "href", dataset[i][1]);
+          img.setAttributeNS(null, "width", "95");
+          img.setAttributeNS(null, "y", "500");
+
+          const textNode = document.createTextNode(dataset[i][0]);
+          sales.appendChild(textNode);
+
+          const translate = [barWidth * i, 0];
+          rect.setAttribute("transform", `translate(${translate})`);
+          sales.setAttribute("transform", `translate(${translate})`);
+          img.setAttribute("transform", `translate(${translate})`);
+
+          container.appendChild(rect);
+          container.appendChild(img);
+          container.appendChild(sales);
+        }
+      }
+    }
+
+    // CREER UN ELEMENT
     function createElement(tag, config, parent = null) {
-      const { source, text, cssText, id } = config || {};
+      const { onclick, source, text, cssText, id, className, htmlId } =
+        config || {};
       const element = document.createElement(tag);
 
       if (cssText) {
-        element.cssText = cssText;
+        element.style.cssText = cssText;
       }
 
       if (source) {
-        element.src = source;
+        element.setAttribute("data-lazy", source);
+        element.classList.add("lazy-loading");
+      }
+
+      if (className) {
+        element.classList.add(className);
+      }
+
+      if (onclick) {
+        element.setAttribute("onclick", onclick);
+      }
+
+      if (htmlId) {
+        element.setAttribute("id", `fav_${htmlId}`);
       }
 
       if (text) {
-        element.innerHTML = text;
-        if (text == "Détails") {
+        if (text == "Details") {
           element.setAttribute("data-target", `modal_${id}`);
           element.onclick = function () {
             toggleModal(event);
           };
+        }
+        if (text == "isFav") {
+          localStorage.getItem(htmlId)
+            ? (element.innerHTML = "♥")
+            : (element.innerHTML = "♡");
+        } else {
+          element.innerHTML = text;
         }
       }
 
@@ -117,26 +518,108 @@
         parent.appendChild(element);
       }
 
+      lazyTargets = document.querySelectorAll(".lazy-loading");
+      lazyTargets.forEach(lazyLoad);
+
       return element;
     }
 
-    async function postData(url = "https://awesome-nft-app.herokuapp.com/") {
+    // LISTER LES NFT
+    async function postData(
+      url = "https://awesome-nft-app.herokuapp.com/?page=1"
+    ) {
       const response = await fetch(url);
-
       const data = await response.json();
       const nft = await data.assets.map((item) => {
-        if (item.image_url) {
-          const myDiv = createElement("article");
-          myDiv.classList.add('nft');
-          createElement("img", { source: item.image_url }, myDiv);
-          createElement("h5", { text: item.name }, myDiv);
-          createElement("button", { text: "Détails", id: item.id }, myDiv);
-          createModal(item.id, {name: item.name, desc: item.description }, myDiv);
+        const myDiv = createElement("article");
+        myDiv.classList.add("nft");
+        createElement("img", { source: item.image_url }, myDiv);
+        createElement("h5", { text: item.name }, myDiv);
+        const buttons = createElement(
+          "div",
+          {
+            cssText:
+              "width: 100%; display:flex; justify-content:space-between;",
+          },
+          myDiv
+        );
+        createElement("button", { text: "Details", id: item.id }, buttons);
+        createElement(
+          "button",
+          {
+            onclick: `favorites(${item.id});`,
+            text: "isFav",
+            cssText:
+              "margin-left: 15px; width: 60px; font-size: 30px; line-height:30px;",
+            className: "outline",
+            htmlId: item.id,
+          },
+          buttons
+        );
+        createModal(
+          item.id,
+          {
+            name: item.name,
+            desc: item.description,
+            creator: item.creator.username,
+            sales: item.sales,
+          },
+          myDiv
+        );
+        if (item.creator.username) {
+          createDrop(item.creator.username);
         }
       });
     }
 
     postData();
+    statsModal();
+
+    // LISTER LES NFT FAVORIS
+    async function postDataFavs(
+      url = "https://awesome-nft-app.herokuapp.com/"
+    ) {
+      const response = await fetch(url);
+
+      const data = await response.json();
+      const nft = await data.assets.map((item) => {
+        if (localStorage.getItem(item.id)) {
+          const myDiv = createElement("article");
+          myDiv.classList.add("nft");
+          createElement("img", { source: item.image_url }, myDiv);
+          createElement("h5", { text: item.name }, myDiv);
+          const buttons = createElement(
+            "div",
+            {
+              cssText:
+                "width: 100%; display:flex; justify-content:space-between;",
+            },
+            myDiv
+          );
+          createElement("button", { text: "Details", id: item.id }, buttons);
+          createElement(
+            "button",
+            {
+              onclick: `favorites(${item.id});`,
+              text: "isFav",
+              cssText:
+                "margin-left: 15px; width: 60px; font-size: 30px; line-height:30px;",
+              className: "outline",
+              htmlId: item.id,
+            },
+            buttons
+          );
+          createModal(
+            item.id,
+            { name: item.name, desc: item.description },
+            myDiv
+          );
+          if (item.creator.username) {
+            createDrop(item.creator.username);
+          }
+        }
+      });
+    }
 
     /*
      * Modal
