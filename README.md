@@ -1,9 +1,9 @@
 # Projet Javascript ES6
 
 ## Team
-KHALIL Mehdi mehdi.khalil@mail-ecv.fr
-ANTONA Pierre antonapierre785@gmail.com
-NAGULESWARAN Abilakzan abilakzan21@gmail.com
+- KHALIL Mehdi mehdi.khalil@mail-ecv.fr
+- ANTONA Pierre antonapierre785@gmail.com
+- NAGULESWARAN Abilakzan abilakzan21@gmail.com
 
 ## Lancer le projet
 Ouvrir le fichier projet.html sur un navigateur
